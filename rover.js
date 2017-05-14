@@ -58,11 +58,11 @@ class Rover {
 
 	changeGridPosition (grid, rover, axis, command) {
 		if(command === FORWARD) {
-			if (rover.position[axis] < grid.gridHeightUpperLimit && !grid.checkFreeGrid(rover)) {
+			if (rover.position[axis] < grid.gridHeightUpperLimit && grid.checkFreeGrid(rover, command)) {
 				rover.position[axis]++
 			}
 		} else if (command === BACKWARD) {
-			if (rover.position[axis] > grid.gridHeightLowerLimit) {
+			if (rover.position[axis] > grid.gridHeightLowerLimit && grid.checkFreeGrid(rover, command)) {
 				rover.position[axis]--
 			}
 		}
@@ -70,11 +70,11 @@ class Rover {
 
 	changeGridPositionInverse (grid, rover, axis, command) {
 		if(command === FORWARD) {
-			if (rover.position[axis] > grid.gridHeightLowerLimit && !grid.checkFreeGrid(rover)) {
+			if (rover.position[axis] > grid.gridHeightLowerLimit && grid.checkFreeGrid(rover, command)) {
 				rover.position[axis]--
 			}
 		} else if (command === BACKWARD) {
-			if (rover.position[axis] < grid.gridHeightUpperLimit) {
+			if (rover.position[axis] < grid.gridHeightUpperLimit && grid.checkFreeGrid(rover, command)) {
 				rover.position[axis]++
 			}
 		}
@@ -101,14 +101,23 @@ class Rover {
 
 class MarsGrid {
 	constructor (gridWidth, gridHeight) {
+		this.grid = []
 		this.gridWidth = gridWidth
 		this.gridHeight = gridHeight
 		this.gridWidthLowerLimit = gridWidth - gridWidth
 		this.gridWidthUpperLimit = gridWidth - 1
 		this.gridHeightLowerLimit = gridHeight - gridHeight
 		this.gridHeightUpperLimit = gridHeight - 1
-		this.elementsPositionsInGrid  = []
-		this.elementsFuturePositionsInGrid  = {}
+		this.elementsPositionsInGrid = []
+		this.elementsFuturePositionsInGrid = {}
+		this.elementsFuturePositionsInGridBackward = {}
+	}
+	
+	 getInstance() {
+		if (!instance) {
+			instance = createMarsGrid();
+		}
+		return instance;
 	}
 	
 	createMarsGrid (obstacles) {
@@ -191,50 +200,59 @@ class MarsGrid {
 		roverElement.src= 'https://encrypted-tbn2.gstatic.com/images?q=tbn:ANd9GcRSv1LKptY9fxQElU816wXsYNEf4-rNXJU1Pzc13DTMYL4Tn36G'
 		roverElement.style.width = '50px'
 		currentPosition[0].append(roverElement)
-		
-		// this.elementsFuturePositionsInGrid[rover.id] = rover.arrowPosition.toString()
 	}
 	
 	drawDirectionForRover (rover) {
-		let position = rover.position.slice(0)
-		let arrowRotation = 0;
-		let roverRotation = 0;
+		let arrowPosition = rover.position.slice(0)
+		let arrowRotation = 0
+		let roverRotation = 0
+		
+		let backwardArrowPosition = rover.position.slice(0)
 
 		switch (rover.direction) {
 			case NORTH:
-				position[0]--
+				arrowPosition[0]--
+				backwardArrowPosition[0]++
 				arrowRotation = 270
 				roverRotation = 270
 				break;
 			case EAST:
-				position[1]++
+				arrowPosition[1]++
+				backwardArrowPosition[1]--
 				arrowRotation = 0
 				roverRotation = 0
 				break;
 			case SOUTH:
-				position[0]++
+				arrowPosition[0]++
+				backwardArrowPosition[0]--
 				arrowRotation = 90
 				roverRotation = 90
 				break;
 			case WEST:
-				position[1]--
+				arrowPosition[1]--
+				backwardArrowPosition[1]++
 				arrowRotation = 180
 				roverRotation = 180
 				break;
 		}
-		var currentRow = document.getElementById('row' + position[0])
+		var currentRow = document.getElementById('row' + arrowPosition[0])
 		this.removeDirectionArrowFromMarsGrid('directionArrow_' + rover.id)
 
-		rover.arrowPosition = position
+		rover.arrowPosition = arrowPosition
+		rover.backwardArrowPosition = backwardArrowPosition
+		
 		this.elementsFuturePositionsInGrid[rover.id] = rover.position.toString()
 		this.elementsFuturePositionsInGrid[rover.id + '_arrow_position'] = rover.arrowPosition.toString()
+		
+		this.elementsFuturePositionsInGridBackward[rover.id] = rover.position.toString()
+		this.elementsFuturePositionsInGrid[rover.id + '_arrow_position'] = rover.backwardArrowPosition.toString()
 
 		
 		if (currentRow) {
-			if (currentRow.getElementsByClassName('col' + position[1]).length) {
+			if (currentRow.getElementsByClassName('col' + arrowPosition[1]).length) {
 
 				if (!this.checkObstacle(rover)) {
-					var currentPosition = currentRow.getElementsByClassName('col' + position[1])
+					var currentPosition = currentRow.getElementsByClassName('col' + arrowPosition[1])
 					var arrowElement = document.createElement('img')
 					arrowElement.id = 'directionArrow_' + rover.id
 					arrowElement.className = 'directionArrow'
@@ -298,36 +316,41 @@ class MarsGrid {
 		this.elementsPositionsInGrid = [...this.elementsPositionsInGrid, obstacle.position.toString()]
 	}
 	
-	checkFreeGrid (rover) {
+	//FIXME REFACTOR THIS TO RETUN WITH && I COULDN´T MAKE IT WORK (T_T)
+	checkFreeGrid (rover, command) {
 		let foundObstacle = this.checkObstacle(rover)
-		let foundRover = this.checkRover(rover)
-		return foundObstacle && foundRover
+		let foundRover = this.checkRover(rover, command)
+	
+		if (!foundObstacle && !foundRover){
+			return true
+		}
+		else {
+			return false
+		}
+		
 	}
 	
-	checkObstacle (rover) {
-		// console.log(this.elementsPositionsInGrid)
-		// console.log(rover.arrowPosition.toString())
-		return (this.elementsPositionsInGrid.indexOf(rover.arrowPosition.toString()) !== -1)
-	}
-	
-	checkRover (rover) {
-		
-		let positionsArray = new Array()
-		for (let position in this.elementsFuturePositionsInGrid){
-			positionsArray = [...positionsArray, this.elementsFuturePositionsInGrid[position]]
-		}
-		console.log (positionsArray)
-		// return true
-		console.log(rover.arrowPosition.toString())
-		
-		if (this.elementsPositionsInGrid.indexOf(rover.arrowPosition.toString()) !== -1) {
-			alert('obstacle arrow')
-		}
-		if (this.elementsPositionsInGrid.indexOf(rover.position.toString()) !== -1) {
-			alert('obstacel rover')
-		}
+	checkObstacle (rover, command) {
+		let position = command === FORWARD ? rover.arrowPosition : rover.backwardArrowPosition
 
-		return (this.elementsPositionsInGrid.indexOf(rover.arrowPosition.toString()) !== -1)
+		return (this.elementsPositionsInGrid.indexOf(position.toString()) !== -1)
+	}
+	
+	checkRover (rover, command) {
+		let positionsArray = new Array()
+		
+		let elementsBBoxPositionsInGrid = command === FORWARD ? this.elementsFuturePositionsInGrid : this.elementsFuturePositionsInGridBackward
+		
+		
+		for (let position in elementsBBoxPositionsInGrid) {
+			if (position.indexOf(rover.id) === -1) {
+				positionsArray = [...positionsArray, this.elementsFuturePositionsInGrid[position]]
+			}
+		}
+	
+		let position = command === FORWARD ? rover.arrowPosition : rover.backwardArrowPosition
+
+		return (positionsArray.indexOf(position.toString()) !== -1)
 	}
 }
 
@@ -359,40 +382,41 @@ const executeSequence = () => {
 
 const launchRoversInMars = () => {
 	
-	let gridWidth = parseInt(document.getElementById('gridWidth').value)
-	let gridHeight = parseInt(document.getElementById('gridHeight').value)
-	
-	let grid = new MarsGrid(gridWidth, gridHeight)
+	if (!window.grid) {
+		let gridWidth = parseInt(document.getElementById('gridWidth').value)
+		let gridHeight = parseInt(document.getElementById('gridHeight').value)
+		
+		let grid = new MarsGrid(gridWidth, gridHeight)
 
-	let obstacles = []
-	let repeatedPositions = []
-	
-	window.repeatedPositions = repeatedPositions
+		let obstacles = []
+		let repeatedPositions = []
+		
+		window.repeatedPositions = repeatedPositions
 
-	for (let i= 0; i < parseInt(document.getElementById('obstaclesNumber').value); i++) {
-		let uniquePosition = getUniquePosition(gridWidth, gridHeight)
-		obstacles = [...obstacles, new Obstacle('obstacle_' + i, uniquePosition)]
+		for (let i= 0; i < parseInt(document.getElementById('obstaclesNumber').value); i++) {
+			let uniquePosition = getUniquePosition(gridWidth, gridHeight)
+			obstacles = [...obstacles, new Obstacle('obstacle_' + i, uniquePosition)]
+		}
+		
+		this.elementsPositionsInGrid = window.repeatedPositions
+		
+		let rovers = []
+		
+		let orientations = [NORTH, EAST, SOUTH, WEST]
+		
+		for (let i = 0; i < parseInt(document.getElementById('roversNumber').value); i++) {
+			let uniquePosition = getUniquePosition(gridWidth, gridHeight)
+			let orientationIndex = Math.floor(Math.random() * (orientations.length - 1 + 1)) + 0
+			rovers = [...rovers, new Rover('rover_' + i, uniquePosition, orientations[orientationIndex])]
+		}
+		
+		window.rovers = rovers
+		grid.createMarsGrid(obstacles)
+		grid.drawObstaclesInMarsGrid()
+		grid.initRoverInMars(rovers)
+		
+		window.grid = grid
 	}
-	
-	this.elementsPositionsInGrid = window.repeatedPositions
-	
-	let rovers = []
-	
-	let orientations = [NORTH, EAST, SOUTH, WEST]
-	
-	for (let i = 0; i < parseInt(document.getElementById('roversNumber').value); i++) {
-		let uniquePosition = getUniquePosition(gridWidth, gridHeight)
-		let orientationIndex = Math.floor(Math.random() * (orientations.length - 1 + 1)) + 0;
-		rovers = [...rovers, new Rover('rover_' + i, uniquePosition, orientations[orientationIndex])]
-		// grid.elementsFuturePositionsInGrid[rovers[i].id] = uniquePosition.toString()
-	}
-	
-	window.rovers = rovers
-	grid.createMarsGrid(obstacles)
-	grid.drawObstaclesInMarsGrid()
-	grid.initRoverInMars(rovers)
-	
-	window.grid = grid
 }
 
 const getUniquePosition = (gridWidth, gridHeight) => {
@@ -400,8 +424,8 @@ const getUniquePosition = (gridWidth, gridHeight) => {
 	let y
 	
 	do {
-		x = Math.floor(Math.random() * (gridWidth - 1 + 1)) + 0;
-		y = Math.floor(Math.random() * (gridHeight - 1 + 1)) + 0;
+		x = Math.floor(Math.random() * (gridWidth - 1 + 1)) + 0
+		y = Math.floor(Math.random() * (gridHeight - 1 + 1)) + 0
 	} while (window.repeatedPositions.indexOf([x, y].toString()) !== -1)
 	
 	window.repeatedPositions = [...window.repeatedPositions, [x, y].toString()]
