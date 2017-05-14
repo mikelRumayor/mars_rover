@@ -11,7 +11,7 @@ const WEST = 'W'
 class Obstacle {
 	
 	constructor (id, position) {
-		this.class = 'obstacle'
+		this.className = 'obstacle'
 		this.id = id
 		this.position = position
 	}
