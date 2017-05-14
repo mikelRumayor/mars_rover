@@ -112,14 +112,7 @@ class MarsGrid {
 		this.elementsFuturePositionsInGrid = {}
 		this.elementsFuturePositionsInGridBackward = {}
 	}
-	
-	 getInstance() {
-		if (!instance) {
-			instance = createMarsGrid();
-		}
-		return instance;
-	}
-	
+		
 	createMarsGrid (obstacles) {
 		this.grid = new Array(this.gridWidth).fill(new Array(this.gridHeight).fill(0))
 		let gridTable = document.createElement("table")
