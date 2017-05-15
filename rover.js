@@ -176,7 +176,7 @@ class MarsGrid {
 	initRoverInMars (rovers) {
 		rovers.map((rover) => {
 			this.drawRoverInMarsGrid(rover)
-			this.drawDirectionForRover(rover, rover.direction)
+			this.drawDirectionForRover(rover)
 		})
 	}
 	
@@ -238,13 +238,13 @@ class MarsGrid {
 		this.elementsFuturePositionsInGrid[rover.id + '_arrow_position'] = rover.arrowPosition.toString()
 		
 		this.elementsFuturePositionsInGridBackward[rover.id] = rover.position.toString()
-		this.elementsFuturePositionsInGrid[rover.id + '_arrow_position'] = rover.backwardArrowPosition.toString()
+		this.elementsFuturePositionsInGridBackward[rover.id + '_arrow_position'] = rover.backwardArrowPosition.toString()
 
 		
 		if (currentRow) {
 			if (currentRow.getElementsByClassName('col' + arrowPosition[1]).length) {
 
-				if (!this.checkObstacle(rover)) {
+				if (!this.checkObstacle(rover, FORWARD)) {
 					var currentPosition = currentRow.getElementsByClassName('col' + arrowPosition[1])
 					var arrowElement = document.createElement('img')
 					arrowElement.id = 'directionArrow_' + rover.id
@@ -311,7 +311,7 @@ class MarsGrid {
 	
 	//FIXME REFACTOR THIS TO RETUN WITH && I COULDN´T MAKE IT WORK (T_T)
 	checkFreeGrid (rover, command) {
-		let foundObstacle = this.checkObstacle(rover)
+		let foundObstacle = this.checkObstacle(rover, command)
 		let foundRover = this.checkRover(rover, command)
 	
 		if (!foundObstacle && !foundRover){
@@ -423,5 +423,5 @@ const getUniquePosition = (gridWidth, gridHeight) => {
 	
 	window.repeatedPositions = [...window.repeatedPositions, [x, y].toString()]
 	
-	return [x,y]
+	return [x, y]
 }
